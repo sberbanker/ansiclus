@@ -1,0 +1,38 @@
+local: 
+  hosts:
+    localhost:
+      ansible_connection: local
+
+tower:
+  hosts:
+    tower.local:
+      ansible_host: 192.168.109.143
+      ansible_connection: ssh
+      ansible_ssh_user: alfes
+
+master:
+  hosts:
+    m1.local:
+      ansible_host: 192.168.109.144
+      ansible_connection: ssh
+      ansible_ssh_user: alfes
+worker:
+  hosts:
+    s1.local:
+      ansible_host: 192.168.109.145
+      ansible_connection: ssh
+      ansible_ssh_user: alfes
+    s2.local:
+      ansible_host: 192.168.109.146
+      ansible_connection: ssh
+      ansible_ssh_user: alfes      
+
+cluster:
+  children:
+    master:
+    worker:
+
+network:
+  children:
+    tower:
+    cluster:

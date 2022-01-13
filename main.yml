@@ -1,0 +1,59 @@
+---
+- hosts: cluster
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: Copy hosts file to cluster
+    ansible.builtin.template:
+      src: templates/hosts.j2
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: '0644'
+      backup: yes
+      force: yes
+
+- hosts: network
+  become: yes
+  become_method: sudo
+  tasks:      
+  - name: Enable fastestmirror for dnf
+    ansible.builtin.lineinfile:
+      path: /etc/dnf/dnf.conf
+      line: fastestmirror=1
+      insertafter: EOF
+  - name: Set max parallel downloads for dnf to 10
+    ansible.builtin.lineinfile:
+      path: /etc/dnf/dnf.conf
+      line: max_parallel_downloads=10
+      insertafter: EOF
+  - name: Set deltarpm for dnf to true
+    ansible.builtin.lineinfile:
+      path: /etc/dnf/dnf.conf
+      line: deltarpm=true
+      insertafter: EOF
+  - name: Install yum utils
+    ansible.builtin.yum:
+      name: yum-utils
+      state: present
+  - name: Install dnf plugins
+    ansible.builtin.dnf:
+      name: dnf-plugins-core
+      state: present
+  - name: Install EPEL
+    ansible.builtin.dnf:
+      name: oracle-epel-release-el8
+      state: present
+  - name: Install chrony
+    ansible.builtin.dnf:
+      name: chrony
+      state: present
+  - name: Activate crony daemon
+    ansible.builtin.systemd:
+      enabled: yes
+      state: started
+      name: chronyd
+
+       
+      
+      
