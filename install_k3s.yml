@@ -1,0 +1,42 @@
+---
+- hosts: master
+  remote_user: root
+
+  tasks:
+  - name: Open ports
+    ansible.posix.firewalld:
+      zone: public
+      permanent: yes
+      state: enabled
+      port: "{{ item }}"
+    loop:
+      - 6443/tcp    #k3s API
+      - 10250/udp   #kubelet
+  - name: Reload service firewalld
+    ansible.builtin.systemd:
+      name: firewalld
+      state: reloaded
+
+  - name: Populate service facts
+    ansible.builtin.service_facts:
+
+  - name: Download server installation script
+    ansible.builtin.get_url:
+      url: https://get.k3s.io
+      dest: /tmp/get_k3s.sh
+      mode: a+x
+    when: 
+      - ansible_facts.services['k3s'] is undefined
+      - ansible_facts.services['k3s.service'] is undefined
+
+  - name: Run server installation script
+    ansible.builtin.command: 
+      cmd: sh /tmp/get_k3s.sh --write-kubeconfig-mode 644
+    when: 
+      - ansible_facts.services['k3s'] is undefined
+      - ansible_facts.services['k3s.service'] is undefined
+    register: k3s
+
+  - name: Print server installation log
+    ansible.builtin.debug:
+      var: k3s.stdout

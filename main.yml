@@ -48,20 +48,7 @@
       enabled: yes
       state: restarted
       name: chronyd
-
-- hosts: master
-  remote_user: root
-
-  tasks:
-  - name: Open port 6443
-    ansible.posix.firewalld:
-      zone: public
-      permanent: yes
-      state: enabled
-      port: "{{ item }}"
-    loop:
-      - 6443/tcp
-  - name: reload service firewalld
-    ansible.builtin.systemd:
-      name: firewalld
-      state: reloaded
+  - name: Put SELinux in permissive mode, logging actions that would be blocked.
+    ansible.posix.selinux:
+      policy: targeted
+      state: permissive
