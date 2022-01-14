@@ -56,5 +56,12 @@
   - name: Open port 6443
     ansible.posix.firewalld:
       zone: public
-      port: 6443/tcp
+      permanent: yes
       state: enabled
+      port: "{{ item }}"
+    loop:
+      - 6443/tcp
+  - name: reload service firewalld
+    ansible.builtin.systemd:
+      name: firewalld
+      state: reloaded
