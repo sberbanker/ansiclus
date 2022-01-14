@@ -1,7 +1,7 @@
 ---
 - hosts: cluster
-  become: yes
-  become_method: sudo
+  remote_user: root
+
   tasks:
   - name: Copy hosts file to cluster
     ansible.builtin.template:
@@ -12,11 +12,6 @@
       mode: '0644'
       backup: yes
       force: yes
-
-- hosts: network
-  become: yes
-  become_method: sudo
-  tasks:      
   - name: Enable fastestmirror for dnf
     ansible.builtin.lineinfile:
       path: /etc/dnf/dnf.conf
@@ -33,7 +28,7 @@
       line: deltarpm=true
       insertafter: EOF
   - name: Install yum utils
-    ansible.builtin.yum:
+    ansible.builtin.dnf:
       name: yum-utils
       state: present
   - name: Install dnf plugins
@@ -51,9 +46,15 @@
   - name: Activate crony daemon
     ansible.builtin.systemd:
       enabled: yes
-      state: started
+      state: restarted
       name: chronyd
 
-       
-      
-      
+- hosts: master
+  remote_user: root
+
+  tasks:
+  - name: Open port 6443
+    ansible.posix.firewalld:
+      zone: public
+      port: 6443/tcp
+      state: enabled

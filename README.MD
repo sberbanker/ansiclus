@@ -4,11 +4,13 @@
   - Добавить юзера alfes с админскими правами во время установки
 2. После установки убедиться, что sshd запущен и порт 22 открыт в файрволле
 ***
-1. Сначала ssh-keygen.
-2. Для каждой машины ssh-copy-id alfes@192.168.109.143
-3. Для проверки плейбука `ansible-playbook  --ask-become-pass -i /home/alfes/ansible/inventory.yml --check /home/alfes/ansible/main.yml` где
+1. Устанавливаем ансибль и прочие пакеты `pipenv install`.
+2. Устанавливаем модули ансибля `ansible-galaxy collection install -r requirements.yml`.
+3. Генерим ключ ssh-keygen -t rsa.
+4. Запускаем `ansible-playbook --ask-become-pass -i inventory.yml add_user.yml`, чтобы скопировать ключ в рута на каждой удалённой машине. Это, возможно, не очень секьюрно, но позволит запускать задачи без эскалации привилегий (не нужно будет пароль вводить каждый раз). Заодно отключаем возможность подключиться по ssh с паролем.
+5. Для проверки плейбука `ansible-playbook -i inventory.yml --check main.yml` где
   * `--ask-become-pass` запрашивает пароль sudo
-  * `-i /home/alfes/ansible/inventory.yml` параметр пути до файла с хостами
-  *  `--check` выполняет проверку вместо запуска
-  *  `/home/alfes/ansible/main.yml` путь до плейбука
+  * `-i inventory.yml` параметр пути до файла с хостами
+  *  `--check` выполняет проверку (dry run) вместо запуска
+  *  `main.yml` путь до плейбука
  

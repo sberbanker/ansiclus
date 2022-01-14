@@ -1,0 +1,33 @@
+---
+- hosts: cluster
+
+  remote_user: alfes
+  become: true
+  become_method: sudo
+
+  tasks:
+  - name: Copy rsa pub key for root user
+    ansible.builtin.authorized_key:
+      user: root
+      state: present
+      key: "{{ lookup('file', '/home/alfes/.ssh/id_rsa.pub') }}"
+  - name: Copy rsa pub key for alfes user
+    ansible.builtin.authorized_key:
+      user: alfes
+      state: present
+      key: "{{ lookup('file', '/home/alfes/.ssh/id_rsa.pub') }}"
+  - name: Disable Password Authentication
+    ansible.builtin.lineinfile:
+      path: /etc/ssh/sshd_config
+      regexp: '^PasswordAuthentication'
+      line: "PasswordAuthentication no"
+      state: present
+      backup: yes
+    notify:
+      - restart ssh
+
+  handlers:
+    - name: restart ssh
+      service:
+        name=sshd
+        state=restarted
