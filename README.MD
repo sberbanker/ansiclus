@@ -14,3 +14,12 @@
   *  `--check` выполняет проверку (dry run) вместо запуска
   *  `main.yml` путь до плейбука
  
+## Разрегистрировать ноды на мастере
+```sh
+kubectl cordon s1.local && \
+kubectl drain s1.local --force --ignore-daemonsets --delete-emptydir-data && \
+kubectl delete node s1.local && \
+kubectl cordon s2.local && \
+kubectl drain s2.local --force --ignore-daemonsets --delete-emptydir-data && \
+kubectl delete node s2.local 
+```

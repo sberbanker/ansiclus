@@ -1,0 +1,68 @@
+---
+- hosts: master
+  remote_user: root
+
+  tasks:
+
+  - name: Populate service facts
+    ansible.builtin.service_facts:
+
+  - name: Check if k3s service running
+    debug:
+      msg: 
+    failed_when: 
+      - ansible_facts.services['k3s'] is undefined 
+      - ansible_facts.services['k3s.service'] is undefined
+    
+
+  - name: Download HELM installation script
+    ansible.builtin.get_url:
+      url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      dest: /tmp/get_helm.sh
+      mode: a+x
+
+  - name: Run HELM installation script
+    ansible.builtin.command: 
+      cmd: sh /tmp/get_helm.sh
+    when: ansible_facts.services['k3s'] is defined or ansible_facts.services['k3s.service'] is defined  
+    
+
+  - name: Add jetstack helm repository
+    kubernetes.core.helm_repository:
+      name: jetstack
+      repo_url: https://charts.jetstack.io
+
+  - name: Download CustomResourceDefinitions file for cert-manager
+    ansible.builtin.get_url:
+      url: https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.crds.yaml
+      dest: /tmp/cert-manager.crds.yaml
+      mode: '0644'
+
+  - name: Install CustomResourceDefinitions for cert-manager
+    kubernetes.core.k8s:
+      state: present
+      src: /tmp/cert-manager.crds.yaml
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+
+  - name: Install cert-manager
+    kubernetes.core.helm:
+      name: cert-manager   
+      chart_version: 1.6.1
+      chart_ref: jetstack/cert-manager
+      release_namespace: cert-manager
+      create_namespace: yes
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+
+
+  - name: Add rancher helm repository
+    kubernetes.core.helm_repository:
+      name: rancher-latest
+      repo_url: https://releases.rancher.com/server-charts/latest
+
+  - name: Create workspace for rancher server
+    kubernetes.core.k8s:
+      name: cattle-system
+      api_version: v1
+      kind: Namespace
+      state: present
+      kubeconfig: /etc/rancher/k3s/k3s.yaml

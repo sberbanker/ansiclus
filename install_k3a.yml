@@ -1,0 +1,63 @@
+---
+- hosts: worker
+  remote_user: root
+
+  tasks:
+
+  - name: Populate service facts
+    ansible.builtin.service_facts:
+
+  - name: Copy k3s server token file
+    ansible.builtin.copy:
+      src: k3s/node-token
+      dest: /var/lib/rancher/k3s/server/
+      owner: root
+      group: root
+      mode: '0644'
+      backup: yes
+      force: yes
+
+  - name: Print installation command
+    ansible.builtin.debug:
+      msg: sh /tmp/get_k3s.sh --token-file /var/lib/rancher/k3s/server/node-token --server https://m1.local:6443
+
+  - name: Download agent installation script
+    ansible.builtin.get_url:
+      url: https://get.k3s.io
+      dest: /tmp/get_k3s.sh
+      mode: a+x
+    when: 
+      - ansible_facts.services['k3s-agent'] is undefined
+      - ansible_facts.services['k3s-agent.service'] is undefined    
+
+  - name: Run agent installation script
+    ansible.builtin.command: 
+      cmd: sh /tmp/get_k3s.sh
+    environment:
+      - K3S_URL: https://m1.local:6443
+      - K3S_TOKEN_FILE: /var/lib/rancher/k3s/server/node-token
+    when: 
+      - ansible_facts.services['k3s-agent'] is undefined
+      - ansible_facts.services['k3s-agent.service'] is undefined    
+    register: k3s
+
+  - name: Print agent installation log
+    ansible.builtin.debug:
+      var: k3s.stdout
+
+- hosts: master
+  remote_user: root
+
+  tasks:
+
+  - name: Set worker role for worker nodes
+    kubernetes.core.k8s:
+      definition:
+        apiversion: v1
+        kind: Node
+        metadata:
+          name: "{{ item }}"
+          labels:
+            node-role.kubernetes.io/worker: "worker"
+      kubeconfig: /etc/rancher/k3s/k3s.yaml
+    loop: "{{ groups['worker'] }}"

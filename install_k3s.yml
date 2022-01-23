@@ -40,3 +40,15 @@
   - name: Print server installation log
     ansible.builtin.debug:
       var: k3s.stdout
+
+  - name: Get k3s server token file
+    ansible.builtin.fetch:
+      src: /var/lib/rancher/k3s/server/node-token
+      dest: k3s/node-token
+      flat: true
+
+  - name: Get k3s server kubeconfig file
+    ansible.builtin.fetch:
+      src: /etc/rancher/k3s/k3s.yaml
+      dest: k3s/k3s.yaml
+      flat: true

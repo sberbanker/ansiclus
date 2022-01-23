@@ -39,6 +39,22 @@
     ansible.builtin.dnf:
       name: oracle-epel-release-el8
       state: present
+
+  - name: install the python3
+    ansible.builtin.dnf:
+      name: python3
+      state: present
+  - name: install the pip
+    ansible.builtin.dnf:
+      name: python3-pip
+      state: present      
+  - name: install the python k8s package
+    ansible.builtin.pip:
+      name: kubernetes   
+  - name: install the python openshift package
+    ansible.builtin.pip:
+      name: openshift  
+
   - name: Install chrony
     ansible.builtin.dnf:
       name: chrony
@@ -48,6 +64,7 @@
       enabled: yes
       state: restarted
       name: chronyd
+
   - name: Put SELinux in permissive mode, logging actions that would be blocked.
     ansible.posix.selinux:
       policy: targeted
